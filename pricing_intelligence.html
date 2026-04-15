@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מנוע תמחור אסטרטגי | ביטוח רכב</title>
+<style>
+:root {
+  --primary:#1a3d6e; --primary-light:#2563a8; --teal:#0891b2;
+  --green:#059669; --red:#dc2626; --orange:#d97706;
+  --bg:#f8fafc; --card:#fff; --border:#e2e8f0;
+  --text:#1e293b; --muted:#64748b; --light:#94a3b8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+.nav{background:var(--primary);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:15px}
+.nav-logo{width:32px;height:32px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:900;font-size:13px}
+.nav-sub{font-size:11px;opacity:.7;font-weight:400}
+.nav-right{display:flex;align-items:center;gap:14px;font-size:12px;opacity:.85}
+.nav-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:3px 10px;border-radius:100px;font-size:11px}
+
+.filters{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;position:sticky;top:52px;z-index:99;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 4px rgba(0,0,0,.04)}
+.fl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.chips{display:flex;gap:4px}
+.chip{padding:4px 11px;border-radius:100px;border:1.5px solid var(--border);background:#fff;font-size:11px;cursor:pointer;transition:all .15s;font-weight:500;color:var(--muted)}
+.chip:hover{border-color:var(--primary-light);color:var(--primary-light)}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.chip.on.s100{background:#1a3d6e}.chip.on.s200{background:#0891b2}.chip.on.s300{background:#64748b}
+.fdiv{width:1px;height:26px;background:var(--border);flex-shrink:0}
+.cchip{padding:3px 9px;border-radius:6px;border:1.5px solid var(--border);background:#fff;font-size:11px;cursor:pointer;transition:all .15s;color:var(--muted);font-weight:500}
+.cchip.on{background:#eff6ff;border-color:#3b82f6;color:#2563eb}
+.cchip.me.on{background:#1a3d6e;border-color:#1a3d6e;color:#fff;font-weight:700}
+
+.main{padding:18px 24px}
+.stitle{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* KPI */
+.krow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kcard{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;transition:box-shadow .2s}
+.kcard:hover{box-shadow:var(--shadow-md)}
+.khead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.ktitle{font-size:11px;font-weight:600;color:var(--muted);line-height:1.3;max-width:140px}
+.ii{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--light);color:var(--light);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;position:relative;font-weight:700;transition:all .15s}
+.ii:hover{border-color:var(--primary-light);color:var(--primary-light)}
+.tt{position:absolute;top:22px;left:0;background:#1e293b;color:#fff;padding:12px 14px;border-radius:8px;font-size:11px;width:240px;z-index:300;display:none;line-height:1.6;box-shadow:var(--shadow-lg)}
+.ii:hover .tt{display:block}
+.tf{font-family:monospace;background:rgba(255,255,255,.1);padding:5px 7px;border-radius:4px;margin:5px 0;font-size:10px;line-height:1.8;white-space:pre-wrap}
+.kval{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:5px}
+.kdelta{font-size:11px;color:var(--muted)}
+.dup{color:var(--red)}.ddown{color:var(--green)}
+.ksub{font-size:10px;color:var(--muted);margin-top:3px}
+.kbar{height:3px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden}
+.kbf{height:100%;border-radius:2px}
+
+/* MAIN GRID */
+.cgrid{display:grid;grid-template-columns:1fr 330px;gap:14px;margin-bottom:18px}
+
+/* CARD */
+.card{background:#fff;border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.chead{padding:14px 18px 11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.ctitle{font-size:14px;font-weight:700}
+.csub{font-size:11px;color:var(--muted);margin-top:2px}
+.cacts{display:flex;gap:5px}
+.bsm{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:11px;cursor:pointer;color:var(--muted);font-weight:500;transition:all .15s}
+.bsm:hover{background:var(--bg)}.bsm.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.cbody{padding:14px 18px}
+
+/* BUBBLE CHART */
+.bcc{position:relative;height:370px}
+.bcc svg{width:100%;height:100%}
+.legend{display:flex;gap:14px;padding:10px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.ld{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
+/* BUBBLE TOOLTIP */
+.btip{position:absolute;background:#1e293b;color:#fff;padding:10px 13px;border-radius:8px;font-size:11px;pointer-events:none;z-index:300;min-width:190px;box-shadow:var(--shadow-lg);display:none;line-height:1.9}
+.btm{font-size:13px;font-weight:700;margin-bottom:3px}
+.btr{display:flex;justify-content:space-between;gap:12px}
+.btk{color:rgba(255,255,255,.6)}.btv{font-weight:600}
+.btvr{color:#f87171}.btvg{color:#34d399}
+
+/* INSIGHTS */
+.ilist{padding:10px;display:flex;flex-direction:column;gap:7px;max-height:430px;overflow-y:auto}
+.ic{padding:11px 12px;border-radius:9px;border-right:3px solid transparent;background:var(--bg);cursor:pointer;transition:all .15s}
+.ic:hover{transform:translateX(-2px)}
+.ic.risk{border-right-color:var(--red);background:#fff5f5}
+.ic.opp{border-right-color:var(--green);background:#f0fdf4}
+.ic.watch{border-right-color:var(--orange);background:#fffbeb}
+.ic.new{border-right-color:var(--teal);background:#ecfeff}
+.ic.act{border-right-color:var(--primary);background:#eff6ff}
+.imeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ibadge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;text-transform:uppercase;letter-spacing:.5px}
+.br{background:#fee2e2;color:#dc2626}.bo{background:#d1fae5;color:#059669}
+.bw{background:#fef3c7;color:#d97706}.bn{background:#cffafe;color:#0891b2}.ba{background:#dbeafe;color:#2563eb}
+.itime{font-size:10px;color:var(--light)}
+.itext{font-size:12px;color:var(--text);line-height:1.5;font-weight:500}
+.imod{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* DEEP DIVE */
+.mhr{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 11px;border-bottom:1px solid var(--border)}
+.minfo{display:flex;align-items:center;gap:12px}
+.micon{width:42px;height:42px;background:var(--bg);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.mname{font-size:17px;font-weight:800}
+.mmeta{font-size:11px;color:var(--muted)}
+.mtags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.tag{padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.tstrat{background:#1a3d6e;color:#fff}.tman{background:#0891b2;color:#fff}
+.tns{background:#64748b;color:#fff}.tnew{background:#f59e0b;color:#fff}
+.tover{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5}
+.taln{background:#d1fae5;color:#059669;border:1px solid #6ee7b7}
+.tund{background:#fef3c7;color:#d97706;border:1px solid #fcd34d}
+.rkbig{display:inline-flex;align-items:baseline;gap:3px;background:#eff6ff;border:2px solid #3b82f6;border-radius:9px;padding:7px 14px}
+.rn{font-size:26px;font-weight:900;color:var(--primary)}.rd{font-size:15px;color:var(--muted);font-weight:600}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px}
+.tab{padding:9px 14px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--primary)}.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
+.tc{display:none;padding:14px 18px}.tc.on{display:block}
+
+/* CALLOUT */
+.callout{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:12px;margin-bottom:12px}
+.cltitle{font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.clgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cli{background:#fff;border-radius:6px;padding:8px 10px}
+.clilbl{font-size:10px;color:var(--muted);margin-bottom:2px}
+.cliv{font-size:16px;font-weight:800}.cliv.r{color:var(--red)}.cliv.g{color:var(--green)}
+
+/* CHART ROW */
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mcc{background:var(--bg);border-radius:9px;padding:13px}
+.mcct{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px}
+
+/* MINI STATS */
+.ms{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.msi{background:var(--bg);border-radius:7px;padding:9px 10px;text-align:center}
+.msv{font-size:17px;font-weight:800}.msl{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* POSITION TRACK */
+.pt{position:relative;height:8px;background:linear-gradient(to left,var(--red),#f59e0b,var(--green));border-radius:4px;margin:12px 0}
+.pd{position:absolute;width:16px;height:16px;background:#fff;border:3px solid var(--primary);border-radius:50%;top:-4px;transform:translateX(50%)}
+.pl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+
+/* DRIVERS */
+.dr{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.dl{width:120px;font-size:11px;color:var(--text);flex-shrink:0}
+.dbt{flex:1;height:14px;background:var(--bg);border-radius:3px;overflow:hidden}
+.dbf{height:100%;border-radius:3px}
+.dp{width:34px;font-size:11px;font-weight:700;text-align:left;color:var(--muted)}
+
+/* AI REC */
+.airec{background:linear-gradient(135deg,#1a3d6e 0%,#0891b2 100%);border-radius:9px;padding:14px;color:#fff}
+.aih{font-size:10px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.ail{list-style:none}
+.ail li{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:12px;display:flex;align-items:flex-start;gap:7px}
+.ail li:last-child{border-bottom:none}
+.ail li::before{content:"→";opacity:.7;flex-shrink:0}
+.wbox{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:11px;font-size:11px;color:#92400e;line-height:1.7}
+
+/* BENCHMARK */
+.bgrid{display:grid;grid-template-columns:1fr 290px;gap:14px;margin-bottom:18px}
+.brow{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.blbl{width:75px;font-size:12px;color:var(--text);font-weight:500;flex-shrink:0}
+.blbl.me{color:var(--primary);font-weight:700}
+.btrk{flex:1;height:22px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bfill{height:100%;border-radius:4px;display:flex;align-items:center;padding-right:8px;justify-content:flex-end;font-size:11px;font-weight:700;color:#fff}
+.bval{width:65px;font-size:12px;text-align:right;font-weight:700;flex-shrink:0}
+.brk{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:var(--bg);color:var(--muted);flex-shrink:0}
+.brk.r1{background:#fef3c7;color:#d97706}.brk.r2{background:#f3f4f6;color:#6b7280}.brk.r3{background:#fff7ed;color:#ea580c}.brk.us{background:var(--primary);color:#fff}
+
+/* MATRIX TABLE */
+.mat{width:100%;border-collapse:collapse;font-size:12px}
+.mat th{background:var(--bg);padding:8px 10px;text-align:right;font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;border-bottom:2px solid var(--border)}
+.mat td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+
+/* STRATEGY TABLE */
+.stable{width:100%;border-collapse:collapse;font-size:12px}
+.stable th{background:var(--bg);padding:9px 11px;text-align:right;font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.3px;border-bottom:2px solid var(--border);white-space:nowrap}
+.stable td{padding:10px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
+.stable tr:hover td{background:#f8fafc;cursor:pointer}.stable tr.sel td{background:#eff6ff}
+.tup{color:var(--red);font-weight:700}.tdn{color:var(--green);font-weight:700}.tfl{color:var(--muted)}
+.ap{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
+.ared{background:#fee2e2;color:#dc2626}.agr{background:#d1fae5;color:#059669}
+.aor{background:#fef3c7;color:#d97706}.agr2{background:#f3f4f6;color:#6b7280}
+
+.pos-note{padding:9px 11px;background:#eff6ff;border-radius:7px;font-size:12px;color:var(--primary);font-weight:600;margin-top:12px}
+.pos-warn{padding:9px 11px;background:#fef3c7;border-radius:7px;font-size:11px;color:#92400e;line-height:1.6;margin-top:7px}
+.pos-ok{padding:9px 11px;background:#f0fdf4;border-radius:7px;font-size:11px;color:#065f46;line-height:1.6;margin-top:7px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fi .3s ease}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">M</div>
+    <div>
+      <div>Strategic Pricing Intelligence</div>
+      <div class="nav-sub">ביטוח רכב · מנוע תמחור אסטרטגי</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">סביבת הדגמה — נתונים פיקטיביים</span>
+    <span>עדכון: היום 09:45</span>
+    <span>Q1 2025</span>
+  </div>
+</nav>
+
+<!-- FILTER BAR -->
+<div class="filters">
+  <div class="fl">ערוץ</div>
+  <div class="chips">
+    <div class="chip" onclick="solo(this)">סוכן</div>
+    <div class="chip" onclick="solo(this)">ישיר</div>
+    <div class="chip on" onclick="solo(this)">כל הערוצים</div>
+  </div>
+  <div class="fdiv"></div>
+  <div class="fl">סגמנט</div>
+  <div class="chips">
+    <div class="chip s100 on" onclick="this.classList.toggle('on')">100</div>
+    <div class="chip s200 on" onclick="this.classList.toggle('on')">200</div>
+    <div class="chip s300" onclick="this.classList.toggle('on')">300</div>
+    <div class="chip" onclick="this.classList.toggle('on')">305</div>
+    <div class="chip" onclick="solo(this)">הכל</div>
+  </div>
+  <div class="fdiv"></div>
+  <div class="fl">מתחרים נבחרים</div>
+  <div class="chips" style="gap:4px">
+    <div class="cchip me on" title="מגדל תמיד נכלל">מגדל ★</div>
+    <div class="cchip on" onclick="this.classList.toggle('on')">כלל</div>
+    <div class="cchip on" onclick="this.classList.toggle('on')">הכשרה</div>
+    <div class="cchip on" onclick="this.classList.toggle('on')">הראל</div>
+    <div class="cchip on" onclick="this.classList.toggle('on')">פניקס</div>
+    <div class="cchip" onclick="this.classList.toggle('on')">AIG</div>
+    <div class="cchip" onclick="this.classList.toggle('on')">איילון</div>
+  </div>
+  <div class="fdiv"></div>
+  <div class="fl">אופק זמן</div>
+  <div class="chips">
+    <div class="chip" onclick="solo(this)">30 יום</div>
+    <div class="chip" onclick="solo(this)">90 יום</div>
+    <div class="chip on" onclick="solo(this)">6 חודשים</div>
+    <div class="chip" onclick="solo(this)">12 חודשים</div>
+  </div>
+  <div class="fdiv"></div>
+  <div class="fl">תצוגה</div>
+  <div class="chips">
+    <div class="chip on" onclick="solo(this)">אסטרטגי בלבד</div>
+    <div class="chip" onclick="solo(this)">הכל</div>
+    <div class="chip" onclick="solo(this)">דגמים חדשים</div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- KPIs -->
+<div class="stitle">מדדים אסטרטגיים — שוק נבחר: כלל, הכשרה, הראל, פניקס</div>
+<div class="krow">
+
+  <div class="kcard">
+    <div class="khead">
+      <div class="ktitle">פער תמחור אסטרטגי</div>
+      <div class="ii">i<div class="tt"><strong>Strategic Pricing Gap %</strong><br>ממוצע % הפער בין מחירנו לממוצע השוק הנבחר, עבור קומבינציות סגמנט 100 בלבד.<div class="tf">AVG(
+  (מחיר שלנו − ממוצע נבחרים)
+  ÷ ממוצע נבחרים
+)
+סינון: סגמנט = 100</div>מחושב על 4 מתחרים נבחרים.</div></div>
+    </div>
+    <div class="kval" style="color:var(--red)">+12.4%</div>
+    <div class="kdelta dup">▲ 1.8pp מהחודש שעבר</div>
+    <div class="ksub">יקרים מהשוק בסגמנט 100</div>
+    <div class="kbar"><div class="kbf" style="width:68%;background:var(--red)"></div></div>
+  </div>
+
+  <div class="kcard">
+    <div class="khead">
+      <div class="ktitle">% קומבינציות אסטרטגיות מעל שוק</div>
+      <div class="ii">i<div class="tt"><strong>% קומבינציות מעל שוק</strong><br>אחוז קומבינציות (דגם × סגמנט × ערוץ) עם פער > 5%.<div class="tf">Count(פער% > 5%)
+÷ סה"כ קומבינציות אסטרטגיות</div>כולל סוכן וישיר.</div></div>
+    </div>
+    <div class="kval" style="color:var(--orange)">71%</div>
+    <div class="kdelta dup">▲ 8pp מהרבעון</div>
+    <div class="ksub">מתוך 34 קומבינציות</div>
+    <div class="kbar"><div class="kbf" style="width:71%;background:var(--orange)"></div></div>
+  </div>
+
+  <div class="kcard">
+    <div class="khead">
+      <div class="ktitle">פער ממוצע — דגמים אסטרטגיים</div>
+      <div class="ii">i<div class="tt"><strong>Avg Strategic Model Gap %</strong><br>ממוצע % הפער לדגמים שסומנו כאסטרטגיים.<div class="tf">AVG(Gap%)
+עבור שורות "אסטרטגי"
+× מתחרים נבחרים + סגמנט</div></div></div>
+    </div>
+    <div class="kval" style="color:var(--red)">+9.7%</div>
+    <div class="kdelta dup">▲ 2.1pp</div>
+    <div class="ksub">5 דגמים אסטרטגיים פעילים</div>
+    <div class="kbar"><div class="kbf" style="width:55%;background:var(--red)"></div></div>
+  </div>
+
+  <div class="kcard">
+    <div class="khead">
+      <div class="ktitle">דירוג בשוק הנבחר</div>
+      <div class="ii">i<div class="tt"><strong>Market Rank Position</strong><br>הדירוג שלנו מהזול ליקר בקרב המתחרים הנבחרים.<div class="tf">דירוג מחיר שלנו
+בין המתחרים שנבחרו
+בהקשר הסינון הנוכחי</div>1 = הכי זול. 5 = הכי יקר.</div></div>
+    </div>
+    <div class="kval" style="color:var(--primary)">#4</div>
+    <div class="kdelta">מתוך 5 מתחרים נבחרים</div>
+    <div class="ksub">2 מקומות מהמוביל הזול</div>
+    <div class="kbar"><div class="kbf" style="width:80%;background:var(--primary)"></div></div>
+  </div>
+
+  <div class="kcard">
+    <div class="khead">
+      <div class="ktitle">מדד הזדמנות</div>
+      <div class="ii">i<div class="tt"><strong>Opportunity Index</strong><br>ציון מורכב לפוטנציאל התערבות.<div class="tf">0.30 × עדיפות סגמנט
++ 0.20 × ציון נפח
++ 0.20 × ציון רווחיות
++ 0.15 × מגמת שוק
++ 0.15 × פוטנציאל פער</div>סגמנט 100 = עדיפות מקסימלית. ציון גבוה = הזדמנות חזקה.</div></div>
+    </div>
+    <div class="kval" style="color:var(--green)">7.8</div>
+    <div class="kdelta ddown">▼ 0.3 — עדיין גבוה</div>
+    <div class="ksub">מדד 1–10 | ממוצע שוק: 5.2</div>
+    <div class="kbar"><div class="kbf" style="width:78%;background:var(--green)"></div></div>
+  </div>
+
+</div>
+
+<!-- BUBBLE + INSIGHTS -->
+<div class="cgrid">
+
+  <div class="card">
+    <div class="chead">
+      <div>
+        <div class="ctitle">מפת שוק אסטרטגית</div>
+        <div class="csub">בועות = נפח | צבע = סגמנט | ציר Y = מגמת מחיר שוק | ציר X = פרופיל רווחיות</div>
+      </div>
+      <div class="cacts">
+        <button class="bsm on">בועות</button>
+        <button class="bsm">טבלה</button>
+        <button class="bsm">ייצוא</button>
+      </div>
+    </div>
+    <div class="cbody" style="padding:8px 14px 0">
+      <div class="bcc" id="bcc">
+        <svg id="bsvg" viewBox="0 0 700 360">
+          <defs>
+            <pattern id="gg" width="70" height="36" patternUnits="userSpaceOnUse">
+              <path d="M70 0L0 0 0 36" fill="none" stroke="#f1f5f9" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="700" height="360" fill="url(#gg)"/>
+          <line x1="58" y1="18" x2="58" y2="318" stroke="#e2e8f0" stroke-width="1.5"/>
+          <line x1="58" y1="318" x2="688" y2="318" stroke="#e2e8f0" stroke-width="1.5"/>
+          <text x="14" y="182" text-anchor="middle" transform="rotate(-90 14 182)" font-size="10" fill="#94a3b8">מגמת מחיר שוק</text>
+          <text x="373" y="353" text-anchor="middle" font-size="10" fill="#94a3b8">פרופיל רווחיות</text>
+          <text x="53" y="28"  text-anchor="end" font-size="9" fill="#94a3b8">+8%</text>
+          <text x="53" y="100" text-anchor="end" font-size="9" fill="#94a3b8">+4%</text>
+          <text x="53" y="172" text-anchor="end" font-size="9" fill="#94a3b8">0%</text>
+          <text x="53" y="244" text-anchor="end" font-size="9" fill="#94a3b8">-4%</text>
+          <text x="53" y="316" text-anchor="end" font-size="9" fill="#94a3b8">-8%</text>
+          <text x="130" y="333" text-anchor="middle" font-size="9" fill="#94a3b8">חלש</text>
+          <text x="300" y="333" text-anchor="middle" font-size="9" fill="#94a3b8">ממוצע</text>
+          <text x="460" y="333" text-anchor="middle" font-size="9" fill="#94a3b8">טוב</text>
+          <text x="620" y="333" text-anchor="middle" font-size="9" fill="#94a3b8">מצוין</text>
+          <line x1="58" y1="172" x2="688" y2="172" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="610" y="58"  text-anchor="middle" font-size="9" fill="#1a3d6e" opacity=".35" font-weight="700">גדל + רווחי</text>
+          <text x="130" y="58"  text-anchor="middle" font-size="9" fill="#dc2626" opacity=".3"  font-weight="700">גדל + מסוכן</text>
+          <text x="610" y="300" text-anchor="middle" font-size="9" fill="#059669" opacity=".3"  font-weight="700">יציב + רווחי</text>
+          <text x="130" y="300" text-anchor="middle" font-size="9" fill="#94a3b8" opacity=".35" font-weight="700">דועך</text>
+
+          <!-- Jaecoo 7 -->
+          <g class="bg" data-key="jaecoo7" style="cursor:pointer">
+            <circle cx="535" cy="72" r="37" fill="#1a3d6e" opacity=".85" stroke="#0c2545" stroke-width="1.5"/>
+            <text x="535" y="67" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Jaecoo 7</text>
+            <text x="535" y="80" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.8)">2024 ✦</text>
+            <rect x="555" y="40" width="26" height="14" rx="7" fill="#f59e0b"/>
+            <text x="568" y="51" text-anchor="middle" font-size="7" fill="#fff" font-weight="900">NEW</text>
+          </g>
+          <!-- Corolla Cross -->
+          <g class="bg" data-key="corolla-cross" style="cursor:pointer">
+            <circle cx="605" cy="118" r="30" fill="#1a3d6e" opacity=".85" stroke="#0c2545" stroke-width="1.5"/>
+            <text x="605" y="113" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Corolla</text>
+            <text x="605" y="125" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.8)">Cross</text>
+          </g>
+          <!-- Yaris Cross -->
+          <g class="bg" data-key="yaris-cross" style="cursor:pointer">
+            <circle cx="475" cy="108" r="26" fill="#1a3d6e" opacity=".85" stroke="#0c2545" stroke-width="1.5"/>
+            <text x="475" y="103" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Yaris</text>
+            <text x="475" y="115" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.8)">Cross</text>
+          </g>
+          <!-- Hyundai Kona -->
+          <g class="bg" data-key="kona" style="cursor:pointer">
+            <circle cx="415" cy="148" r="28" fill="#1a3d6e" opacity=".85" stroke="#0c2545" stroke-width="1.5"/>
+            <text x="415" y="143" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Hyundai</text>
+            <text x="415" y="155" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.8)">Kona</text>
+          </g>
+          <!-- Kia Picanto -->
+          <g class="bg" data-key="picanto" style="cursor:pointer">
+            <circle cx="305" cy="178" r="34" fill="#0891b2" opacity=".82" stroke="#0c7490" stroke-width="1.5"/>
+            <text x="305" y="173" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">Kia</text>
+            <text x="305" y="185" text-anchor="middle" font-size="8.5" fill="rgba(255,255,255,.85)">Picanto</text>
+          </g>
+          <!-- Tucson -->
+          <g class="bg" data-key="tucson" style="cursor:pointer">
+            <circle cx="455" cy="236" r="24" fill="#0891b2" opacity=".75" stroke="#0c7490" stroke-width="1.5"/>
+            <text x="455" y="231" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Tucson</text>
+            <text x="455" y="243" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.8)">Hyundai</text>
+          </g>
+          <!-- RAV4 -->
+          <g class="bg" data-key="rav4" style="cursor:pointer">
+            <circle cx="558" cy="192" r="22" fill="#0891b2" opacity=".72" stroke="#0c7490" stroke-width="1"/>
+            <text x="558" y="187" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">RAV4</text>
+            <text x="558" y="199" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.8)">Toyota</text>
+          </g>
+          <!-- Skoda Scala -->
+          <g class="bg" data-key="scala" style="cursor:pointer">
+            <circle cx="188" cy="256" r="18" fill="#94a3b8" opacity=".8" stroke="#64748b" stroke-width="1"/>
+            <text x="188" y="251" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">Skoda</text>
+            <text x="188" y="263" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,.8)">Scala</text>
+          </g>
+          <!-- 305 ghost -->
+          <g style="opacity:.42">
+            <circle cx="152" cy="292" r="14" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+            <text x="152" y="291" text-anchor="middle" font-size="7" fill="#64748b" font-weight="600">305</text>
+            <text x="152" y="301" text-anchor="middle" font-size="6.5" fill="#64748b">Avoid</text>
+          </g>
+          <!-- Selection ring -->
+          <circle id="selRing" cx="535" cy="72" r="44" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,3" opacity=".9"/>
+        </svg>
+        <div class="btip" id="btip">
+          <div class="btm" id="bt-m">Jaecoo 7</div>
+          <div class="btr"><span class="btk">סגמנט</span><span class="btv" id="bt-s">100 — אסטרטגי</span></div>
+          <div class="btr"><span class="btk">מחיר שלנו</span><span class="btv" id="bt-p">₪4,280</span></div>
+          <div class="btr"><span class="btk">ממוצע שוק נבחר</span><span class="btv" id="bt-a">₪3,820</span></div>
+          <div class="btr"><span class="btk">פער</span><span class="btv btvr" id="bt-g">+12.0%</span></div>
+          <div class="btr"><span class="btk">מגמה</span><span class="btv btvg" id="bt-t">↑ +6.2%</span></div>
+          <div class="btr"><span class="btk">דירוג</span><span class="btv" id="bt-r">#4 מתוך 5</span></div>
+          <div class="btr"><span class="btk">נפח</span><span class="btv" id="bt-v">1,240 פוליסות</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#1a3d6e"></div>100 — אסטרטגי</div>
+      <div class="li"><div class="ld" style="background:#0891b2"></div>200 — מנוהל</div>
+      <div class="li"><div class="ld" style="background:#94a3b8"></div>300 — חלש</div>
+      <div class="li"><div class="ld" style="background:#cbd5e1"></div>305 — הימנע</div>
+      <div class="li"><span style="background:#f59e0b;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">NEW</span>&nbsp;דגם חדש</div>
+      <div class="li" style="margin-right:auto;font-size:10px">גודל בועה = נפח פוליסות</div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS PANEL -->
+  <div class="card" style="display:flex;flex-direction:column">
+    <div class="chead" style="padding:13px 15px 10px">
+      <div>
+        <div class="ctitle">תובנות אסטרטגיות</div>
+        <div class="csub">שוק נבחר | סגמנטים 100–200</div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <span class="ibadge br">3 סיכונים</span>
+        <span class="ibadge bo">2 הזדמנויות</span>
+      </div>
+    </div>
+    <div class="ilist">
+      <div class="ic risk">
+        <div class="imeta"><span class="ibadge br">⚠ סיכון</span><span class="itime">היום</span></div>
+        <div class="itext">3 דגמים אסטרטגיים יקרים ב-15%+ מהשוק הנבחר</div>
+        <div class="imod">Jaecoo 7, Corolla Cross, Hyundai Kona</div>
+      </div>
+      <div class="ic risk">
+        <div class="imeta"><span class="ibadge br">⚠ סיכון</span><span class="itime">60 יום</span></div>
+        <div class="itext">2 דגמים מציגים ירידת מחיר שוק חדה</div>
+        <div class="imod">Hyundai Tucson ↓4.1% | Skoda Scala ↓3.8%</div>
+      </div>
+      <div class="ic act">
+        <div class="imeta"><span class="ibadge ba">פעולה נדרשת</span><span class="itime">שוטף</span></div>
+        <div class="itext">הפער הממוצע שלנו vs. שוק בסגמנט 100 עומד על +12%</div>
+        <div class="imod">ממוצע 4 מתחרים נבחרים | כל הערוצים</div>
+      </div>
+      <div class="ic new">
+        <div class="imeta"><span class="ibadge bn">✦ דגם חדש</span><span class="itime">2024</span></div>
+        <div class="itext">Jaecoo 7 — פוטנציאל גבוה בסגמנט 100, נתוני שוק חלקיים</div>
+        <div class="imod">מומלץ: מעקב מואץ 30 יום לפני קביעת מחיר</div>
+      </div>
+      <div class="ic opp">
+        <div class="imeta"><span class="ibadge bo">✓ הזדמנות</span><span class="itime">ערוץ ישיר</span></div>
+        <div class="itext">בערוץ הישיר — דירוג #5 מתוך 7, מרחב גדול לשיפור</div>
+        <div class="imod">ירידת מחיר 6–8% צפויה להגדיל נפח ב-~15%</div>
+      </div>
+      <div class="ic watch">
+        <div class="imeta"><span class="ibadge bw">◎ מעקב</span><span class="itime">ערוץ סוכן</span></div>
+        <div class="itext">בערוץ הסוכן — מיושרים בסגמנט 200, יקרים בסגמנט 100</div>
+        <div class="imod">ממוצע פער סגמנט 100 בסוכן: +8.4%</div>
+      </div>
+      <div class="ic opp">
+        <div class="imeta"><span class="ibadge bo">✓ הזדמנות</span><span class="itime">שוק</span></div>
+        <div class="itext">Toyota Yaris Cross — מגמת שוק +5.1%, חלון לשמירת מחיר</div>
+        <div class="imod">שיפור מיצוב יחסי ללא הורדת מחיר</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEEP DIVE -->
+<div class="stitle">ניתוח דגם נבחר</div>
+<div class="card" id="deepdive" style="margin-bottom:18px">
+  <div class="mhr">
+    <div class="minfo">
+      <div class="micon">🚙</div>
+      <div>
+        <div class="mname" id="d-name">Jaecoo 7 — 2024</div>
+        <div class="mmeta">SUV קומפקטי · ייבוא מסחרי</div>
+        <div class="mtags" id="d-tags">
+          <span class="tag tstrat">אסטרטגי</span>
+          <span class="tag tnew">דגם חדש 2024</span>
+          <span class="tag tover">יקרים ב-12%</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <div class="rkbig" id="d-rank"><span class="rn">#4</span><span class="rd">מתוך 5</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">דירוג בשוק הנבחר</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on" onclick="stab(this,'trend')">מגמת מחיר</div>
+    <div class="tab" onclick="stab(this,'comp')">פיזור מתחרים</div>
+    <div class="tab" onclick="stab(this,'drivers')">גורמי תמחור</div>
+    <div class="tab" onclick="stab(this,'rec')">המלצה אסטרטגית</div>
+  </div>
+
+  <!-- TREND TAB -->
+  <div class="tc on" id="tab-trend">
+    <div class="callout">
+      <div class="cltitle">השוואת סגמנטים — ממצא מרכזי</div>
+      <div class="clgrid">
+        <div class="cli"><div class="clilbl">פער יחסית לסגמנט 100</div><div class="cliv r">+18.2%</div></div>
+        <div class="cli"><div class="clilbl">פער יחסית לשוק הנבחר הכולל</div><div class="cliv r">+12.0%</div></div>
+        <div class="cli"><div class="clilbl">מחיר שלנו (ממוצע)</div><div class="cliv">₪4,280</div></div>
+        <div class="cli"><div class="clilbl">ממוצע שוק נבחר</div><div class="cliv">₪3,820</div></div>
+      </div>
+    </div>
+    <div class="crow">
+      <div class="mcc">
+        <div class="mcct">מגמת מחיר — 6 חודשים אחרונים</div>
+        <svg viewBox="0 0 300 150" style="width:100%;height:150px">
+          <line x1="38" y1="10" x2="38" y2="125" stroke="#e2e8f0" stroke-width="1"/>
+          <line x1="38" y1="125" x2="295" y2="125" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="33" y="20"  text-anchor="end" font-size="8" fill="#94a3b8">5,000</text>
+          <text x="33" y="55"  text-anchor="end" font-size="8" fill="#94a3b8">4,500</text>
+          <text x="33" y="90"  text-anchor="end" font-size="8" fill="#94a3b8">4,000</text>
+          <text x="33" y="125" text-anchor="end" font-size="8" fill="#94a3b8">3,500</text>
+          <text x="62"  y="140" text-anchor="middle" font-size="8" fill="#94a3b8">אוק׳</text>
+          <text x="110" y="140" text-anchor="middle" font-size="8" fill="#94a3b8">נוב׳</text>
+          <text x="158" y="140" text-anchor="middle" font-size="8" fill="#94a3b8">דצ׳</text>
+          <text x="206" y="140" text-anchor="middle" font-size="8" fill="#94a3b8">ינו׳</text>
+          <text x="254" y="140" text-anchor="middle" font-size="8" fill="#94a3b8">פבר׳</text>
+          <text x="288" y="140" text-anchor="middle" font-size="8" fill="#94a3b8">מרץ</text>
+          <polyline points="62,88 110,85 158,80 206,76 254,71 288,68" fill="none" stroke="#0891b2" stroke-width="2"/>
+          <polyline points="62,61 110,60 158,58 206,57 254,56 288,55" fill="none" stroke="#1a3d6e" stroke-width="2.5"/>
+          <polygon points="62,61 110,60 158,58 206,57 254,56 288,55 288,68 254,71 206,76 158,80 110,85 62,88" fill="#1a3d6e" opacity=".07"/>
+          <circle cx="288" cy="55" r="3" fill="#1a3d6e"/>
+          <circle cx="288" cy="68" r="3" fill="#0891b2"/>
+          <rect x="48" y="12" width="8" height="3" fill="#1a3d6e" rx="1"/>
+          <text x="60" y="16" font-size="8" fill="#1a3d6e" font-weight="700">מחיר שלנו ₪4,280</text>
+          <rect x="48" y="22" width="8" height="3" fill="#0891b2" rx="1"/>
+          <text x="60" y="26" font-size="8" fill="#0891b2">שוק נבחר ₪3,820</text>
+        </svg>
+      </div>
+      <div class="mcc">
+        <div class="mcct">מיקום יחסי בשוק</div>
+        <div style="margin:14px 0 7px">
+          <div class="pt"><div class="pd" style="right:22%"></div></div>
+          <div class="pl"><span>הכי יקר</span><span>ממוצע שוק</span><span>הכי זול</span></div>
+        </div>
+        <div class="ms" style="margin-top:14px">
+          <div class="msi"><div class="msv" style="color:var(--red)">+12%</div><div class="msl">מעל ממוצע</div></div>
+          <div class="msi"><div class="msv" style="color:var(--primary)">#4</div><div class="msl">דירוג מתוך 5</div></div>
+          <div class="msi"><div class="msv" style="color:var(--orange)">↑6.2%</div><div class="msl">מגמת שוק</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPETITIVE TAB -->
+  <div class="tc" id="tab-comp">
+    <div style="margin-bottom:12px;font-size:12px;color:var(--muted)">השוואת מחירים לפי מתחרים נבחרים | Jaecoo 7 2024 | סגמנט 100 | כל הערוצים</div>
+    <div id="compBars"></div>
+  </div>
+
+  <!-- DRIVERS TAB -->
+  <div class="tc" id="tab-drivers">
+    <div style="margin-bottom:11px;font-size:11px;color:var(--muted)">חשיבות גורמי תמחור — Jaecoo 7 | ערך גבוה = השפעה גדולה על הפרמיה</div>
+    <div class="dr"><div class="dl">סיכון גניבה</div><div class="dbt"><div class="dbf" style="width:88%;background:linear-gradient(to left,#1a3d6e,#2563a8)"></div></div><div class="dp">88%</div></div>
+    <div class="dr"><div class="dl">עלות תיקון</div><div class="dbt"><div class="dbf" style="width:75%;background:linear-gradient(to left,#1a3d6e,#2563a8)"></div></div><div class="dp">75%</div></div>
+    <div class="dr"><div class="dl">גיל הנהג</div><div class="dbt"><div class="dbf" style="width:68%;background:linear-gradient(to left,#0891b2,#06b6d4)"></div></div><div class="dp">68%</div></div>
+    <div class="dr"><div class="dl">היסטוריית תביעות</div><div class="dbt"><div class="dbf" style="width:62%;background:linear-gradient(to left,#0891b2,#06b6d4)"></div></div><div class="dp">62%</div></div>
+    <div class="dr"><div class="dl">אזור גיאוגרפי</div><div class="dbt"><div class="dbf" style="width:55%;background:linear-gradient(to left,#0891b2,#06b6d4)"></div></div><div class="dp">55%</div></div>
+    <div class="dr"><div class="dl">שנת הרכב</div><div class="dbt"><div class="dbf" style="width:42%;background:linear-gradient(to left,#64748b,#94a3b8)"></div></div><div class="dp">42%</div></div>
+    <div class="dr"><div class="dl">ציון בטיחות</div><div class="dbt"><div class="dbf" style="width:35%;background:linear-gradient(to left,#64748b,#94a3b8)"></div></div><div class="dp">35%</div></div>
+    <div class="dr"><div class="dl">תדירות / חומרה</div><div class="dbt"><div class="dbf" style="width:28%;background:linear-gradient(to left,#64748b,#94a3b8)"></div></div><div class="dp">28%</div></div>
+  </div>
+
+  <!-- REC TAB -->
+  <div class="tc" id="tab-rec">
+    <div class="crow">
+      <div>
+        <div class="airec">
+          <div class="aih">🤖 המלצה אסטרטגית — Jaecoo 7</div>
+          <ul class="ail">
+            <li>הפחתת מחיר 6% בערוץ הישיר, סגמנט 100 — צמיחה צפויה ~18%</li>
+            <li>שמירת מחיר בערוץ הסוכן — פער מקובל, רווחיות טובה</li>
+            <li>לא לדחוף צמיחה בסגמנט 305 — יחס הפסד גבוה</li>
+            <li>מעקב מואץ 30 יום לפני שינוי נוסף — דגם חדש בשוק</li>
+            <li>לבחון ציון הבטיחות כגורם תמחור — נתון עדיין לא בשל</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="wbox">⚠ <strong>NEW MODEL</strong> — נתוני מתחרים עדיין חלקיים.<br>ההמלצה מבוססת על 60% מהנתון המלא. עדכון אוטומטי בעוד <strong>18 יום</strong>.</div>
+        <div class="ms" style="margin-top:10px">
+          <div class="msi"><div class="msv" style="color:var(--green)">+18%</div><div class="msl">צמיחה צפויה</div></div>
+          <div class="msi"><div class="msv" style="color:var(--primary)">6%</div><div class="msl">הפחתה מומלצת</div></div>
+          <div class="msi"><div class="msv" style="color:var(--orange)">30d</div><div class="msl">זמן מעקב</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BENCHMARK -->
+<div class="stitle">השוואת מתחרים נבחרים</div>
+<div class="bgrid">
+
+  <div class="card">
+    <div class="chead">
+      <div>
+        <div class="ctitle">דירוג מחיר — שוק נבחר</div>
+        <div class="csub">Jaecoo 7 | סגמנט 100 | כל הערוצים | 4 מתחרים נבחרים</div>
+      </div>
+      <div class="rkbig"><span class="rn">#4</span><span class="rd">מתוך 5</span></div>
+    </div>
+    <div class="cbody">
+      <div style="margin-bottom:6px;font-size:11px;color:var(--muted)">↑ מסודר מהזול ליקר</div>
+      <div class="brow"><div class="brk r1">1</div><div class="blbl">הכשרה</div><div class="btrk"><div class="bfill" style="width:58%;background:#0891b2">₪3,415</div></div><div class="bval" style="color:var(--green)">-10.6%</div></div>
+      <div class="brow"><div class="brk r2">2</div><div class="blbl">כלל</div><div class="btrk"><div class="bfill" style="width:63%;background:#0891b2">₪3,630</div></div><div class="bval" style="color:var(--green)">-4.9%</div></div>
+      <div class="brow"><div class="brk r3">3</div><div class="blbl">פניקס</div><div class="btrk"><div class="bfill" style="width:67%;background:#64748b">₪3,780</div></div><div class="bval" style="color:var(--orange)">-1.0%</div></div>
+      <div style="border-top:2px dashed #94a3b8;margin:9px 0;font-size:10px;color:#94a3b8;padding-top:4px">ממוצע שוק נבחר ₪3,820</div>
+      <div class="brow"><div class="brk us">4</div><div class="blbl me">מגדל ★</div><div class="btrk"><div class="bfill" style="width:73%;background:#1a3d6e">₪4,280</div></div><div class="bval" style="color:var(--red);font-size:13px">+12%</div></div>
+      <div class="brow"><div class="brk" style="background:#fee2e2;color:var(--red)">5</div><div class="blbl">הראל</div><div class="btrk"><div class="bfill" style="width:79%;background:#dc2626">₪4,510</div></div><div class="bval" style="color:var(--red)">+18.1%</div></div>
+      <div class="pos-note">📍 אנחנו יקרים ב-12% מממוצע השוק הנבחר — #4 מתוך 5</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead">
+      <div class="ctitle">פירוט לפי ערוץ וסגמנט</div>
+      <div class="csub">פערים % ממוצע שוק נבחר</div>
+    </div>
+    <div class="cbody">
+      <table class="mat">
+        <thead>
+          <tr>
+            <th>סגמנט</th>
+            <th style="text-align:center">סוכן</th>
+            <th style="text-align:center">ישיר</th>
+            <th style="text-align:center">ממוצע</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:#1a3d6e">100 ★</strong></td>
+            <td style="text-align:center;color:var(--red);font-weight:700">+8.4%</td>
+            <td style="text-align:center;color:var(--red);font-weight:700">+18.2%</td>
+            <td style="text-align:center;color:var(--red);font-weight:700">+12.0%</td>
+          </tr>
+          <tr style="background:var(--bg)">
+            <td><strong style="color:#0891b2">200</strong></td>
+            <td style="text-align:center;color:var(--green);font-weight:600">+1.2%</td>
+            <td style="text-align:center;color:var(--orange);font-weight:600">+4.5%</td>
+            <td style="text-align:center;color:var(--orange);font-weight:600">+2.8%</td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted)">300</td>
+            <td style="text-align:center;color:var(--muted)">-1.5%</td>
+            <td style="text-align:center;color:var(--muted)">+0.8%</td>
+            <td style="text-align:center;color:var(--muted)">-0.4%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pos-warn" style="margin-top:10px">⚡ <strong>סגמנט 100 בערוץ ישיר</strong> — פער גדול ביותר: +18.2%<br>הזדמנות להתערבות מיידית.</div>
+      <div class="pos-ok">✓ <strong>סגמנט 200 בערוץ סוכן</strong> — מיושרים (+1.2%)<br>לא נדרשת התערבות.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- STRATEGIC TABLE -->
+<div class="stitle">טבלת ניתוח אסטרטגית — כל הדגמים</div>
+<div class="card" style="margin-bottom:32px">
+  <div class="chead">
+    <div>
+      <div class="ctitle">סקירת דגמים × סגמנטים × ערוצים</div>
+      <div class="csub">מחושב ביחס לשוק הנבחר: כלל, הכשרה, הראל, פניקס | סגמנטים 100–200</div>
+    </div>
+    <div class="cacts">
+      <button class="bsm">ייצוא Excel</button>
+      <button class="bsm">סנן</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="stable">
+      <thead>
+        <tr>
+          <th>דגם</th><th>שנה</th><th>סגמנט</th><th>מעמד</th><th>חדש</th>
+          <th>מחיר שלנו</th><th>ממוצע שוק נבחר</th><th>פער %</th><th>מגמת שוק</th><th>דירוג</th><th>פעולה מומלצת</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="sel" onclick="selModel('jaecoo7')"><td><strong>Jaecoo 7</strong></td><td>2024</td><td><span class="tag tstrat" style="font-size:10px">100</span></td><td><span class="tag tstrat" style="font-size:10px">אסטרטגי</span></td><td><span class="tag tnew" style="font-size:9px">NEW</span></td><td>₪4,280</td><td>₪3,820</td><td><span class="tup">+12.0%</span></td><td><span class="tup">↑ +6.2%</span></td><td><strong>#4/5</strong></td><td><span class="ap ared">הפחת מחיר</span></td></tr>
+        <tr onclick="selModel('corolla-cross')"><td><strong>Toyota Corolla Cross</strong></td><td>2023</td><td><span class="tag tstrat" style="font-size:10px">100</span></td><td><span class="tag tstrat" style="font-size:10px">אסטרטגי</span></td><td>—</td><td>₪5,140</td><td>₪4,450</td><td><span class="tup">+15.5%</span></td><td><span class="tup">↑ +4.8%</span></td><td><strong>#4/5</strong></td><td><span class="ap ared">בחן הפחתה</span></td></tr>
+        <tr onclick="selModel('yaris-cross')"><td><strong>Toyota Yaris Cross</strong></td><td>2023</td><td><span class="tag tstrat" style="font-size:10px">100</span></td><td><span class="tag tstrat" style="font-size:10px">אסטרטגי</span></td><td>—</td><td>₪4,620</td><td>₪4,290</td><td><span class="tup">+7.7%</span></td><td><span class="tup">↑ +5.1%</span></td><td><strong>#3/5</strong></td><td><span class="ap aor">מעקב</span></td></tr>
+        <tr onclick="selModel('kona')"><td><strong>Hyundai Kona</strong></td><td>2023</td><td><span class="tag tstrat" style="font-size:10px">100</span></td><td><span class="tag tstrat" style="font-size:10px">אסטרטגי</span></td><td>—</td><td>₪4,890</td><td>₪4,310</td><td><span class="tup">+13.5%</span></td><td><span class="tup">↑ +2.9%</span></td><td><strong>#4/5</strong></td><td><span class="ap ared">הפחת מחיר</span></td></tr>
+        <tr onclick="selModel('picanto')"><td><strong>Kia Picanto</strong></td><td>2022</td><td><span class="tag tman" style="font-size:10px">200</span></td><td><span class="tag tman" style="font-size:10px">מנוהל</span></td><td>—</td><td>₪2,940</td><td>₪2,890</td><td><span style="color:var(--orange);font-weight:700">+1.7%</span></td><td><span class="tfl">→ 0.0%</span></td><td><strong>#3/5</strong></td><td><span class="ap agr">שמור מחיר</span></td></tr>
+        <tr onclick="selModel('tucson')"><td><strong>Hyundai Tucson</strong></td><td>2022</td><td><span class="tag tman" style="font-size:10px">200</span></td><td><span class="tag tman" style="font-size:10px">מנוהל</span></td><td>—</td><td>₪5,250</td><td>₪5,410</td><td><span class="tdn">-3.0%</span></td><td><span class="tdn">↓ -4.1%</span></td><td><strong>#2/5</strong></td><td><span class="ap aor">מעקב מגמה</span></td></tr>
+        <tr onclick="selModel('rav4')"><td><strong>Toyota RAV4</strong></td><td>2022</td><td><span class="tag tman" style="font-size:10px">200</span></td><td><span class="tag tman" style="font-size:10px">מנוהל</span></td><td>—</td><td>₪6,110</td><td>₪6,050</td><td><span style="color:var(--green);font-weight:700">+1.0%</span></td><td><span class="tfl">→ +0.8%</span></td><td><strong>#3/5</strong></td><td><span class="ap agr">שמור מחיר</span></td></tr>
+        <tr style="opacity:.6"><td><strong>Skoda Scala</strong></td><td>2021</td><td><span class="tag tns" style="font-size:10px">300</span></td><td><span class="tag tns" style="font-size:10px">לא אסטרטגי</span></td><td>—</td><td>₪3,180</td><td>₪3,340</td><td><span class="tdn">-4.8%</span></td><td><span class="tdn">↓ -3.8%</span></td><td><strong>#2/5</strong></td><td><span class="ap agr2">הימנע מגדילה</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const MD = {
+  'jaecoo7':      {name:'Jaecoo 7 — 2024',            seg:'100 — אסטרטגי',    p:4280, mkt:3820, gap:'+12.0%', trend:'↑ +6.2%', rank:'#4 מתוך 5', vol:'1,240', strat:true, isNew:true,  over:true},
+  'corolla-cross':{name:'Toyota Corolla Cross — 2023', seg:'100 — אסטרטגי',    p:5140, mkt:4450, gap:'+15.5%', trend:'↑ +4.8%', rank:'#4 מתוך 5', vol:'980',   strat:true, isNew:false, over:true},
+  'yaris-cross':  {name:'Toyota Yaris Cross — 2023',   seg:'100 — אסטרטגי',    p:4620, mkt:4290, gap:'+7.7%',  trend:'↑ +5.1%', rank:'#3 מתוך 5', vol:'760',   strat:true, isNew:false, over:false},
+  'kona':         {name:'Hyundai Kona — 2023',         seg:'100 — אסטרטגי',    p:4890, mkt:4310, gap:'+13.5%', trend:'↑ +2.9%', rank:'#4 מתוך 5', vol:'840',   strat:true, isNew:false, over:true},
+  'picanto':      {name:'Kia Picanto — 2022',          seg:'200 — מנוהל',       p:2940, mkt:2890, gap:'+1.7%',  trend:'→ 0.0%',  rank:'#3 מתוך 5', vol:'2,100', strat:false,isNew:false, over:false},
+  'tucson':       {name:'Hyundai Tucson — 2022',       seg:'200 — מנוהל',       p:5250, mkt:5410, gap:'-3.0%',  trend:'↓ -4.1%', rank:'#2 מתוך 5', vol:'620',   strat:false,isNew:false, over:false},
+  'rav4':         {name:'Toyota RAV4 — 2022',          seg:'200 — מנוהל',       p:6110, mkt:6050, gap:'+1.0%',  trend:'→ +0.8%', rank:'#3 מתוך 5', vol:'510',   strat:false,isNew:false, over:false},
+  'scala':        {name:'Skoda Scala — 2021',          seg:'300 — לא אסטרטגי', p:3180, mkt:3340, gap:'-4.8%',  trend:'↓ -3.8%', rank:'#2 מתוך 5', vol:'290',   strat:false,isNew:false, over:false},
+};
+
+const COMPS = {
+  'jaecoo7':      [{n:'הכשרה',p:3415,r:1},{n:'כלל',p:3630,r:2},{n:'פניקס',p:3780,r:3},{n:'מגדל',p:4280,r:4,me:true},{n:'הראל',p:4510,r:5}],
+  'corolla-cross':[{n:'הכשרה',p:4100,r:1},{n:'כלל',p:4280,r:2},{n:'פניקס',p:4510,r:3},{n:'מגדל',p:5140,r:4,me:true},{n:'הראל',p:5320,r:5}],
+  'yaris-cross':  [{n:'הכשרה',p:3900,r:1},{n:'פניקס',p:4050,r:2},{n:'מגדל',p:4290,r:3,me:true},{n:'כלל',p:4380,r:4},{n:'הראל',p:4620,r:5}],
+  'kona':         [{n:'הכשרה',p:3880,r:1},{n:'כלל',p:4100,r:2},{n:'פניקס',p:4250,r:3},{n:'מגדל',p:4890,r:4,me:true},{n:'הראל',p:5010,r:5}],
+  'picanto':      [{n:'הכשרה',p:2600,r:1},{n:'כלל',p:2720,r:2},{n:'מגדל',p:2940,r:3,me:true},{n:'פניקס',p:3050,r:4},{n:'הראל',p:3180,r:5}],
+  'tucson':       [{n:'הכשרה',p:4900,r:1},{n:'מגדל',p:5250,r:2,me:true},{n:'כלל',p:5380,r:3},{n:'פניקס',p:5520,r:4},{n:'הראל',p:5710,r:5}],
+  'rav4':         [{n:'הכשרה',p:5610,r:1},{n:'כלל',p:5870,r:2},{n:'מגדל',p:6110,r:3,me:true},{n:'פניקס',p:6290,r:4},{n:'הראל',p:6480,r:5}],
+  'scala':        [{n:'מגדל',p:3180,r:1,me:true},{n:'הכשרה',p:3210,r:2},{n:'כלל',p:3310,r:3},{n:'פניקס',p:3380,r:4},{n:'הראל',p:3540,r:5}],
+};
+
+const BPOS = {
+  'jaecoo7':{cx:535,cy:72},'corolla-cross':{cx:605,cy:118},'yaris-cross':{cx:475,cy:108},
+  'kona':{cx:415,cy:148},'picanto':{cx:305,cy:178},'tucson':{cx:455,cy:236},
+  'rav4':{cx:558,cy:192},'scala':{cx:188,cy:256}
+};
+
+function solo(el){
+  el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function stab(el,id){
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+}
+
+function renderComps(key){
+  const data=(COMPS[key]||COMPS['jaecoo7']).slice().sort((a,b)=>a.p-b.p);
+  const max=Math.max(...data.map(d=>d.p));
+  const avg=data.reduce((s,d)=>s+d.p,0)/data.length;
+  const rkCls={1:'r1',2:'r2',3:'r3'};
+  let h='';
+  data.forEach(item=>{
+    const w=(item.p/max*84).toFixed(0);
+    const d=((item.p-avg)/avg*100).toFixed(1);
+    const dc=d>3?'var(--red)':d<-3?'var(--green)':'var(--orange)';
+    const rk=item.me?'us':(rkCls[item.r]||'');
+    h+=`<div class="brow"><div class="brk ${rk}">${item.r}</div><div class="blbl ${item.me?'me':''}">${item.n}${item.me?' ★':''}</div><div class="btrk"><div class="bfill" style="width:${w}%;background:${item.me?'#1a3d6e':'#0891b2'}">₪${item.p.toLocaleString()}</div></div><div class="bval" style="color:${dc}">${d>0?'+':''}${d}%</div></div>`;
+  });
+  h+=`<div style="border-top:2px dashed #94a3b8;margin:9px 0;font-size:10px;color:#94a3b8;padding-top:4px">ממוצע שוק נבחר ₪${Math.round(avg).toLocaleString()}</div>`;
+  document.getElementById('compBars').innerHTML=h;
+}
+
+function selModel(key){
+  const m=MD[key]; if(!m) return;
+  document.getElementById('d-name').textContent=m.name;
+  let tags=`<span class="tag ${m.strat?'tstrat':'tman'}">${m.strat?'אסטרטגי':'מנוהל'}</span>`;
+  if(m.isNew) tags+=`<span class="tag tnew">דגם חדש 2024</span>`;
+  if(m.over) tags+=`<span class="tag tover">יקרים ${m.gap}</span>`;
+  else if(parseFloat(m.gap)<-2) tags+=`<span class="tag tund">מתחת לשוק ${m.gap}</span>`;
+  else tags+=`<span class="tag taln">מיושר</span>`;
+  document.getElementById('d-tags').innerHTML=tags;
+  const parts=m.rank.split(' ');
+  document.getElementById('d-rank').innerHTML=`<span class="rn">${parts[0]}</span><span class="rd">מתוך ${parts[2]}</span>`;
+  const pos=BPOS[key];
+  if(pos){const r=document.getElementById('selRing');r.setAttribute('cx',pos.cx);r.setAttribute('cy',pos.cy);}
+  document.querySelectorAll('.stable tr').forEach(r=>r.classList.remove('sel'));
+  renderComps(key);
+  // reset to trend tab
+  document.querySelector('.tabs .tab.on')?.classList.remove('on');
+  const firstTab=document.querySelector('.tabs .tab');
+  if(firstTab){firstTab.classList.add('on');stab(firstTab,'trend');}
+  document.getElementById('deepdive').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+renderComps('jaecoo7');
+
+// Bubble interactions
+document.querySelectorAll('.bg').forEach(g=>{
+  g.addEventListener('mouseenter',function(){
+    const m=MD[this.dataset.key]; if(!m) return;
+    const t=document.getElementById('btip');
+    document.getElementById('bt-m').textContent=m.name;
+    document.getElementById('bt-s').textContent=m.seg;
+    document.getElementById('bt-p').textContent='₪'+m.p.toLocaleString();
+    document.getElementById('bt-a').textContent='₪'+m.mkt.toLocaleString();
+    document.getElementById('bt-g').textContent=m.gap;
+    document.getElementById('bt-g').className='btv '+(m.gap.startsWith('+')?'btvr':'btvg');
+    document.getElementById('bt-t').textContent=m.trend;
+    document.getElementById('bt-r').textContent=m.rank;
+    document.getElementById('bt-v').textContent=m.vol+' פוליסות';
+    t.style.display='block';
+    const c=this.querySelector('circle');
+    if(c){c.style.filter='brightness(1.12)';c.style.transition='all .2s';}
+  });
+  g.addEventListener('mousemove',function(e){
+    const t=document.getElementById('btip');
+    const b=document.getElementById('bcc').getBoundingClientRect();
+    let left=e.clientX-b.left-210;
+    if(left<0) left=e.clientX-b.left+15;
+    t.style.top=(e.clientY-b.top+10)+'px';
+    t.style.left=left+'px';
+  });
+  g.addEventListener('mouseleave',function(){
+    document.getElementById('btip').style.display='none';
+    const c=this.querySelector('circle');
+    if(c) c.style.filter='';
+  });
+  g.addEventListener('click',function(){selModel(this.dataset.key);});
+});
+
+// Animate KPI values
+document.querySelectorAll('.kval').forEach((el,i)=>{
+  el.style.cssText+='opacity:0;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease';
+  setTimeout(()=>{el.style.opacity='1';el.style.transform='translateY(0)';},100+i*80);
+});
+</script>
+</body>
+</html>
